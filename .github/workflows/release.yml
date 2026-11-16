@@ -16,8 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@1.95
-      # Bundling is on faun-lang's url-deps branch until it merges.
-      - run: cargo install --locked --git https://github.com/benburk/faun-lang --branch url-deps faun-cli
+      - run: cargo install --locked --git https://github.com/benburk/faun-lang --branch main faun-cli
       - run: faun test src/roman.fn
       - id: bundle
         run: |
