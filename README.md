@@ -12,8 +12,6 @@ expect RomanNumeral.new(4000) == Err(OutOfRange)
 expect RomanNumeral.parse("IIII") == Err(InvalidRomanNumeral)
 ```
 
-After [AA-Turner/roman-numerals](https://github.com/AA-Turner/roman-numerals).
-
 ## Using it
 
 Each [release](https://github.com/benburk/faun-roman/releases)'s notes give

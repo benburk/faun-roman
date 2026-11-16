@@ -6,8 +6,6 @@
 # is the largest. A numeral is written in capitals, `XVI`, or small letters,
 # `xvi`, and read in either, so long as it is all one case and written the
 # one way `new` would write it: `IIII` and `IC` are refused.
-#
-# After AA-Turner/roman-numerals, under the Zero-Clause BSD license.
 
 package {}
 
