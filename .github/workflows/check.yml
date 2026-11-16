@@ -1,0 +1,15 @@
+# Runs the library's expectations on every pull request and on main.
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/faun
+      - run: faun test src/roman.fn

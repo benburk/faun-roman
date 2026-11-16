@@ -1,46 +1,107 @@
-# Roman numerals: a natural number written as one, and read back.
+# Roman numerals, from I to MMMCMXCIX: 1 to 3,999.
+#
+# A `RomanNumeral` holds a number a numeral can write, and its constructor
+# is private, so no other value can be made. Classical numerals have no
+# zero, and write a letter at most three times running, which is why 3,999
+# is the largest. A numeral is written in capitals, `XVI`, or small letters,
+# `xvi`, and read in either, so long as it is all one case and written the
+# one way `new` would write it: `IIII` and `IC` are refused.
+#
+# After AA-Turner/roman-numerals, under the Zero-Clause BSD license.
 
 package {}
 
-export {to_roman, from_roman}
+export {RomanNumeral}
 
 # Each value a numeral writes, largest first, the subtractive pairs among
 # them, so writing a number takes the largest that fits, again and again.
-numerals : List((Nat, Str))
+numerals : List((Nat, Str, Str))
 numerals = [
-  (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
-  (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
-  (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+  (1000, "M", "m"), (900, "CM", "cm"), (500, "D", "d"), (400, "CD", "cd"),
+  (100, "C", "c"), (90, "XC", "xc"), (50, "L", "l"), (40, "XL", "xl"),
+  (10, "X", "x"), (9, "IX", "ix"), (5, "V", "v"), (4, "IV", "iv"),
+  (1, "I", "i"),
 ]
 
-# `n` as a Roman numeral; nought is the empty string.
-to_roman : Nat -> Str
-to_roman(n) -> written(n, numerals)
+RomanNumeral : Nat.(
+  # The smallest numeral, I.
+  min : RomanNumeral
+  min = RomanNumeral(1)
 
-written : (Nat, List((Nat, Str))) -> Str
-written(0, _) -> ""
-written(_, []) -> ""
-written(n, [(value, letters), *rest]) if n >= value ->
-  letters.concat(written(n - value, [(value, letters), *rest]))
-written(n, [_, *rest]) -> written(n, rest)
+  # The largest numeral, MMMCMXCIX.
+  max : RomanNumeral
+  max = RomanNumeral(3999)
 
-# The number a Roman numeral writes, where it writes one in the form
-# `to_roman` does.
-from_roman : Str -> Result(Nat, Str)
-from_roman(text) -> (
-  n = read(text, numerals, 0)
-  if to_roman(n) == text then Ok(n) else Err("`${text}` is not a Roman numeral")
+  # The numeral for `n`, where one writes it: 1 to 3,999.
+  new : Nat -> Result(RomanNumeral, [OutOfRange])
+  new(n) if n >= 1 & n <= 3999 -> Ok(RomanNumeral(n))
+  new(_) -> Err(OutOfRange)
+
+  # The numeral `text` writes, in capitals or small letters.
+  parse : Str -> Result(RomanNumeral, [InvalidRomanNumeral])
+  parse(text) -> (
+    upper = read(text, numerals, True, 0)
+    lower = read(text, numerals, False, 0)
+    if fits(upper) & written(upper, numerals, True) == text then Ok(RomanNumeral(upper))
+    else if fits(lower) & written(lower, numerals, False) == text then Ok(RomanNumeral(lower))
+    else Err(InvalidRomanNumeral)
+  )
+
+  # The number it writes.
+  value : RomanNumeral -> Nat
+  value(RomanNumeral(n)) -> n
+
+  # The numeral in capitals, `XVI`, as `"${numeral}"` writes it.
+  to_str : RomanNumeral -> Str
+  to_str(RomanNumeral(n)) -> written(n, numerals, True)
+
+  # The numeral in small letters, `xvi`.
+  to_lower : RomanNumeral -> Str
+  to_lower(RomanNumeral(n)) -> written(n, numerals, False)
+
+  equals : (RomanNumeral, RomanNumeral) -> Bool
+  equals(RomanNumeral(a), RomanNumeral(b)) -> a == b
 )
 
-read : (Str, List((Nat, Str)), Nat) -> Nat
-read(_, [], total) -> total
-read(text, [(value, letters), *rest], total) if text.starts_with(letters) ->
-  read(text.drop_prefix(letters), [(value, letters), *rest], total + value)
-read(text, [_, *rest], total) -> read(text, rest, total)
+fits : Nat -> Bool
+fits(n) -> n >= 1 & n <= 3999
 
-expect to_roman(1994) == "MCMXCIV"
-expect to_roman(3999) == "MMMCMXCIX"
-expect to_roman(4) == "IV"
-expect to_roman(0) == ""
-expect from_roman("MCMXCIV") == Ok(1994)
-expect from_roman("IIII").is_err()
+# `n` written with the largest numerals that fit, in capitals where `upper`.
+written : (Nat, List((Nat, Str, Str)), Bool) -> Str
+written(0, _, _) -> ""
+written(_, [], _) -> ""
+written(n, [(value, capital, small), *rest], upper) if n >= value ->
+  (if upper then capital else small)
+    .concat(written(n - value, [(value, capital, small), *rest], upper))
+written(n, [_, *rest], upper) -> written(n, rest, upper)
+
+# What `text` adds up to, taking the largest numerals it starts with, in
+# capitals where `upper`; whether it is written as `written` would write it
+# is the caller's to check.
+read : (Str, List((Nat, Str, Str)), Bool, Nat) -> Nat
+read(_, [], _, total) -> total
+read(text, [(value, capital, small), *rest], upper, total) if text.starts_with(if upper then capital else small) ->
+  read(
+    text.drop_prefix(if upper then capital else small),
+    [(value, capital, small), *rest],
+    upper,
+    total + value,
+  )
+read(text, [_, *rest], upper, total) -> read(text, rest, upper, total)
+
+expect RomanNumeral.new(16).map_ok(|numeral| numeral.to_str()) == Ok("XVI")
+expect RomanNumeral.new(16).map_ok(|numeral| numeral.to_lower()) == Ok("xvi")
+expect RomanNumeral.new(1994).map_ok(|numeral| "${numeral}") == Ok("MCMXCIV")
+expect RomanNumeral.max.to_str() == "MMMCMXCIX" & RomanNumeral.min.to_str() == "I"
+expect RomanNumeral.new(0) == Err(OutOfRange)
+expect RomanNumeral.new(4000) == Err(OutOfRange)
+expect RomanNumeral.parse("XLII").map_ok(|numeral| numeral.value()) == Ok(42)
+expect RomanNumeral.parse("xlii").map_ok(|numeral| numeral.value()) == Ok(42)
+expect RomanNumeral.parse("MMMCMXCIX").map_ok(|numeral| numeral.value()) == Ok(3999)
+expect RomanNumeral.parse("XvI") == Err(InvalidRomanNumeral)
+expect RomanNumeral.parse("IIII") == Err(InvalidRomanNumeral)
+expect RomanNumeral.parse("IC") == Err(InvalidRomanNumeral)
+expect RomanNumeral.parse("MMMM") == Err(InvalidRomanNumeral)
+expect RomanNumeral.parse("") == Err(InvalidRomanNumeral)
+expect RomanNumeral.parse("Spam!") == Err(InvalidRomanNumeral)
+expect RomanNumeral.parse("XVI") == RomanNumeral.new(16).err_as(InvalidRomanNumeral)

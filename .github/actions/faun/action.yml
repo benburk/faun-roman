@@ -1,0 +1,23 @@
+# Installs the faun command, built from one faun-lang commit, so every run
+# tests and bundles with the same compiler. Moving to a newer compiler is
+# changing `rev` here.
+name: Install faun
+description: Build the faun command from a pinned faun-lang commit, cached.
+
+inputs:
+  rev:
+    description: The faun-lang commit to build.
+    default: 762a2907dd8cb6a890b17de7ad6907783d51d228
+
+runs:
+  using: composite
+  steps:
+    - uses: dtolnay/rust-toolchain@1.95
+    - id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/bin/faun
+        key: faun-${{ inputs.rev }}
+    - if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: cargo install --locked --git https://github.com/benburk/faun-lang --rev ${{ inputs.rev }} faun
