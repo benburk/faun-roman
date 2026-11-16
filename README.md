@@ -1,32 +1,27 @@
 # faun-roman
 
-Roman numerals for [Faun](https://github.com/benburk/faun-lang): `to_roman`
-writes a natural number as one, and `from_roman` reads one back.
+Roman numerals for [Faun](https://github.com/benburk/faun-lang), from `I`
+to `MMMCMXCIX`: 1 to 3,999.
 
 ```ruby
-import roman {to_roman, from_roman}
+import roman {RomanNumeral}
 
-expect to_roman(1994) == "MCMXCIV"
-expect from_roman("MCMXCIV") == Ok(1994)
+expect RomanNumeral.from_nat(16).map_ok(|numeral| numeral.to_str()) == Ok("XVI")
+expect RomanNumeral.from_str("xlii").map_ok(|numeral| numeral.to_nat()) == Ok(42)
+expect RomanNumeral.from_nat(4000) == Err(OutOfRange)
+expect RomanNumeral.from_str("IIII") == Err(Malformed)
 ```
 
 ## Using it
 
-Each release publishes a bundle, and its notes give the line to depend on
-it, a URL naming the bundle by its hash:
-
-```ruby
-package {
-  uses: {roman: "https://github.com/benburk/faun-roman/releases/download/v0.1.0/HASH.tar.zst"},
-}
-```
+Each [release](https://github.com/benburk/faun-roman/releases)'s notes give
+the line to add to your package's `uses`.
 
 ## Releasing
 
-Push a tag, `v0.1.0`. The release workflow tests the library, bundles it
-with `faun bundle`, and creates the tag's release with the bundle.
+Push a version tag. The release workflow tests the library, bundles it,
+and publishes the bundle on the tag's release.
 
 ## License
 
-[Zero-Clause BSD](LICENSE): use it for anything, with no attribution
-required. Each release's bundle carries the license with it.
+[Zero-Clause BSD](LICENSE).

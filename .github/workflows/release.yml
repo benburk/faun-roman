@@ -1,4 +1,4 @@
-# Bundles the library on every version tag, `v0.1.0`, and publishes the
+# Bundles the library on every version tag, `vMAJOR.MINOR.PATCH`, and publishes the
 # bundle on that tag's release. A Faun package depends on it by the
 # bundle's URL, which names it by its hash and holds the tag's version.
 name: Release
@@ -15,8 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@1.95
-      - run: cargo install --locked --git https://github.com/benburk/faun-lang --branch main faun
+      - uses: ./.github/actions/faun
       - run: faun test src/roman.fn
       - id: bundle
         run: |
