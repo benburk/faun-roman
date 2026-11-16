@@ -25,3 +25,8 @@ package {
 
 Push a tag, `v0.1.0`. The release workflow tests the library, bundles it
 with `faun bundle`, and creates the tag's release with the bundle.
+
+## License
+
+[Zero-Clause BSD](LICENSE): use it for anything, with no attribution
+required. Each release's bundle carries the license with it.
