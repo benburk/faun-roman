@@ -13,12 +13,11 @@ export {RomanNumeral}
 
 # Each value a numeral writes, largest first, the subtractive pairs among
 # them, so writing a number takes the largest that fits, again and again.
-numerals : List((Nat, Str, Str))
+numerals : List((Nat, Str))
 numerals = [
-  (1000, "M", "m"), (900, "CM", "cm"), (500, "D", "d"), (400, "CD", "cd"),
-  (100, "C", "c"), (90, "XC", "xc"), (50, "L", "l"), (40, "XL", "xl"),
-  (10, "X", "x"), (9, "IX", "ix"), (5, "V", "v"), (4, "IV", "iv"),
-  (1, "I", "i"),
+  (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+  (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+  (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
 ]
 
 RomanNumeral : Nat.(
@@ -32,17 +31,17 @@ RomanNumeral : Nat.(
 
   # The numeral for `n`, where one writes it: 1 to 3,999.
   new : Nat -> Result(RomanNumeral, [OutOfRange])
-  new(n) if n >= 1 & n <= 3999 -> Ok(RomanNumeral(n))
+  new(n) if fits(n) -> Ok(RomanNumeral(n))
   new(_) -> Err(OutOfRange)
 
   # The numeral `text` writes, in capitals or small letters.
   parse : Str -> Result(RomanNumeral, [InvalidRomanNumeral])
   parse(text) -> (
-    upper = read(text, numerals, True, 0)
-    lower = read(text, numerals, False, 0)
-    if fits(upper) & written(upper, numerals, True) == text then Ok(RomanNumeral(upper))
-    else if fits(lower) & written(lower, numerals, False) == text then Ok(RomanNumeral(lower))
-    else Err(InvalidRomanNumeral)
+    n = read(ascii(text, U8.to_ascii_upper), numerals, 0)
+    capitals = written(n, numerals)
+    if fits(n) & (text == capitals | text == ascii(capitals, U8.to_ascii_lower))
+      then Ok(RomanNumeral(n))
+      else Err(InvalidRomanNumeral)
   )
 
   # The number it writes.
@@ -51,11 +50,11 @@ RomanNumeral : Nat.(
 
   # The numeral in capitals, `XVI`, as `"${numeral}"` writes it.
   to_str : RomanNumeral -> Str
-  to_str(RomanNumeral(n)) -> written(n, numerals, True)
+  to_str(RomanNumeral(n)) -> written(n, numerals)
 
   # The numeral in small letters, `xvi`.
   to_lower : RomanNumeral -> Str
-  to_lower(RomanNumeral(n)) -> written(n, numerals, False)
+  to_lower(numeral) -> ascii(numeral.to_str(), U8.to_ascii_lower)
 
   equals : (RomanNumeral, RomanNumeral) -> Bool
   equals(RomanNumeral(a), RomanNumeral(b)) -> a == b
@@ -64,28 +63,26 @@ RomanNumeral : Nat.(
 fits : Nat -> Bool
 fits(n) -> n >= 1 & n <= 3999
 
-# `n` written with the largest numerals that fit, in capitals where `upper`.
-written : (Nat, List((Nat, Str, Str)), Bool) -> Str
-written(0, _, _) -> ""
-written(_, [], _) -> ""
-written(n, [(value, capital, small), *rest], upper) if n >= value ->
-  (if upper then capital else small)
-    .concat(written(n - value, [(value, capital, small), *rest], upper))
-written(n, [_, *rest], upper) -> written(n, rest, upper)
+# `text` with `change` made to each of its ASCII letters; a numeral is
+# all ASCII, and anything else is left as it was.
+ascii : (Str, U8 -> U8) -> Str
+ascii(text, change) -> Str.from_ascii(text.to_utf8().map(change)).ok_or(text)
 
-# What `text` adds up to, taking the largest numerals it starts with, in
-# capitals where `upper`; whether it is written as `written` would write it
-# is the caller's to check.
-read : (Str, List((Nat, Str, Str)), Bool, Nat) -> Nat
-read(_, [], _, total) -> total
-read(text, [(value, capital, small), *rest], upper, total) if text.starts_with(if upper then capital else small) ->
-  read(
-    text.drop_prefix(if upper then capital else small),
-    [(value, capital, small), *rest],
-    upper,
-    total + value,
-  )
-read(text, [_, *rest], upper, total) -> read(text, rest, upper, total)
+# `n` written with the largest numerals that fit.
+written : (Nat, List((Nat, Str))) -> Str
+written(0, _) -> ""
+written(_, []) -> ""
+written(n, [(value, letters), *rest]) if n >= value ->
+  letters.concat(written(n - value, [(value, letters), *rest]))
+written(n, [_, *rest]) -> written(n, rest)
+
+# What `text` adds up to, taking the largest numerals it starts with;
+# whether it is written as `written` would write it is the caller's to check.
+read : (Str, List((Nat, Str)), Nat) -> Nat
+read(_, [], total) -> total
+read(text, [(value, letters), *rest], total) if text.starts_with(letters) ->
+  read(text.drop_prefix(letters), [(value, letters), *rest], total + value)
+read(text, [_, *rest], total) -> read(text, rest, total)
 
 expect RomanNumeral.new(16).map_ok(|numeral| numeral.to_str()) == Ok("XVI")
 expect RomanNumeral.new(16).map_ok(|numeral| numeral.to_lower()) == Ok("xvi")
