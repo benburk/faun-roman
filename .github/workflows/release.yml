@@ -1,0 +1,32 @@
+# Bundles the library on every version tag, `v0.1.0`, and publishes the
+# bundle on that tag's release. A Faun package depends on it by the
+# bundle's URL, which names it by its hash and holds the tag's version.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.95
+      # Bundling is on faun-lang's url-deps branch until it merges.
+      - run: cargo install --locked --git https://github.com/benburk/faun-lang --branch url-deps faun-cli
+      - run: faun test src/roman.fn
+      - id: bundle
+        run: |
+          faun bundle src/roman.fn -o dist
+          echo "file=$(ls dist)" >> "$GITHUB_OUTPUT"
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          URL: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.bundle.outputs.file }}
+        run: |
+          printf 'Depend on this release with:\n\n```ruby\npackage {\n  uses: {roman: "%s"},\n}\n```\n' "$URL" > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/*.tar.zst --title "$GITHUB_REF_NAME" --notes-file notes.md
+          cat notes.md >> "$GITHUB_STEP_SUMMARY"

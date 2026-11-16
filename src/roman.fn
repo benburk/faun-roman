@@ -1,0 +1,46 @@
+# Roman numerals: a natural number written as one, and read back.
+
+package {}
+
+export {to_roman, from_roman}
+
+# Each value a numeral writes, largest first, the subtractive pairs among
+# them, so writing a number takes the largest that fits, again and again.
+numerals : List((Nat, Str))
+numerals = [
+  (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+  (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+  (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+]
+
+# `n` as a Roman numeral; nought is the empty string.
+to_roman : Nat -> Str
+to_roman(n) -> written(n, numerals)
+
+written : (Nat, List((Nat, Str))) -> Str
+written(0, _) -> ""
+written(_, []) -> ""
+written(n, [(value, letters), *rest]) if n >= value ->
+  letters.concat(written(n - value, [(value, letters), *rest]))
+written(n, [_, *rest]) -> written(n, rest)
+
+# The number a Roman numeral writes, where it writes one in the form
+# `to_roman` does.
+from_roman : Str -> Result(Nat, Str)
+from_roman(text) -> (
+  n = read(text, numerals, 0)
+  if to_roman(n) == text then Ok(n) else Err("`${text}` is not a Roman numeral")
+)
+
+read : (Str, List((Nat, Str)), Nat) -> Nat
+read(_, [], total) -> total
+read(text, [(value, letters), *rest], total) if text.starts_with(letters) ->
+  read(text.drop_prefix(letters), [(value, letters), *rest], total + value)
+read(text, [_, *rest], total) -> read(text, rest, total)
+
+expect to_roman(1994) == "MCMXCIV"
+expect to_roman(3999) == "MMMCMXCIX"
+expect to_roman(4) == "IV"
+expect to_roman(0) == ""
+expect from_roman("MCMXCIV") == Ok(1994)
+expect from_roman("IIII").is_err()
