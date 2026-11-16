@@ -5,7 +5,7 @@
 # zero, and write a letter at most three times running, which is why 3,999
 # is the largest. A numeral is written in capitals, `XVI`, or small letters,
 # `xvi`, and read in either, so long as it is all one case and written the
-# one way `new` would write it: `IIII` and `IC` are refused.
+# one way `from_nat` would write it: `IIII` and `IC` are refused.
 
 package {}
 
@@ -30,23 +30,23 @@ RomanNumeral : Nat.(
   max = RomanNumeral(3999)
 
   # The numeral for `n`, where one writes it: 1 to 3,999.
-  new : Nat -> Result(RomanNumeral, [OutOfRange])
-  new(n) if fits(n) -> Ok(RomanNumeral(n))
-  new(_) -> Err(OutOfRange)
+  from_nat : Nat -> Result(RomanNumeral, [OutOfRange])
+  from_nat(n) if fits(n) -> Ok(RomanNumeral(n))
+  from_nat(_) -> Err(OutOfRange)
 
   # The numeral `text` writes, in capitals or small letters.
-  parse : Str -> Result(RomanNumeral, [InvalidRomanNumeral])
-  parse(text) -> (
+  from_str : Str -> Result(RomanNumeral, [Malformed])
+  from_str(text) -> (
     n = read(ascii(text, U8.to_ascii_upper), numerals, 0)
     capitals = written(n, numerals)
     if fits(n) & (text == capitals | text == ascii(capitals, U8.to_ascii_lower))
       then Ok(RomanNumeral(n))
-      else Err(InvalidRomanNumeral)
+      else Err(Malformed)
   )
 
   # The number it writes.
-  value : RomanNumeral -> Nat
-  value(RomanNumeral(n)) -> n
+  to_nat : RomanNumeral -> Nat
+  to_nat(RomanNumeral(n)) -> n
 
   # The numeral in capitals, `XVI`, as `"${numeral}"` writes it.
   to_str : RomanNumeral -> Str
@@ -84,19 +84,19 @@ read(text, [(value, letters), *rest], total) if text.starts_with(letters) ->
   read(text.drop_prefix(letters), [(value, letters), *rest], total + value)
 read(text, [_, *rest], total) -> read(text, rest, total)
 
-expect RomanNumeral.new(16).map_ok(|numeral| numeral.to_str()) == Ok("XVI")
-expect RomanNumeral.new(16).map_ok(|numeral| numeral.to_lower()) == Ok("xvi")
-expect RomanNumeral.new(1994).map_ok(|numeral| "${numeral}") == Ok("MCMXCIV")
+expect RomanNumeral.from_nat(16).map_ok(|numeral| numeral.to_str()) == Ok("XVI")
+expect RomanNumeral.from_nat(16).map_ok(|numeral| numeral.to_lower()) == Ok("xvi")
+expect RomanNumeral.from_nat(1994).map_ok(|numeral| "${numeral}") == Ok("MCMXCIV")
 expect RomanNumeral.max.to_str() == "MMMCMXCIX" & RomanNumeral.min.to_str() == "I"
-expect RomanNumeral.new(0) == Err(OutOfRange)
-expect RomanNumeral.new(4000) == Err(OutOfRange)
-expect RomanNumeral.parse("XLII").map_ok(|numeral| numeral.value()) == Ok(42)
-expect RomanNumeral.parse("xlii").map_ok(|numeral| numeral.value()) == Ok(42)
-expect RomanNumeral.parse("MMMCMXCIX").map_ok(|numeral| numeral.value()) == Ok(3999)
-expect RomanNumeral.parse("XvI") == Err(InvalidRomanNumeral)
-expect RomanNumeral.parse("IIII") == Err(InvalidRomanNumeral)
-expect RomanNumeral.parse("IC") == Err(InvalidRomanNumeral)
-expect RomanNumeral.parse("MMMM") == Err(InvalidRomanNumeral)
-expect RomanNumeral.parse("") == Err(InvalidRomanNumeral)
-expect RomanNumeral.parse("Spam!") == Err(InvalidRomanNumeral)
-expect RomanNumeral.parse("XVI") == RomanNumeral.new(16).err_as(InvalidRomanNumeral)
+expect RomanNumeral.from_nat(0) == Err(OutOfRange)
+expect RomanNumeral.from_nat(4000) == Err(OutOfRange)
+expect RomanNumeral.from_str("XLII").map_ok(|numeral| numeral.to_nat()) == Ok(42)
+expect RomanNumeral.from_str("xlii").map_ok(|numeral| numeral.to_nat()) == Ok(42)
+expect RomanNumeral.from_str("MMMCMXCIX").map_ok(|numeral| numeral.to_nat()) == Ok(3999)
+expect RomanNumeral.from_str("XvI") == Err(Malformed)
+expect RomanNumeral.from_str("IIII") == Err(Malformed)
+expect RomanNumeral.from_str("IC") == Err(Malformed)
+expect RomanNumeral.from_str("MMMM") == Err(Malformed)
+expect RomanNumeral.from_str("") == Err(Malformed)
+expect RomanNumeral.from_str("Spam!") == Err(Malformed)
+expect RomanNumeral.from_str("XVI") == RomanNumeral.from_nat(16).err_as(Malformed)

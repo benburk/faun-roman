@@ -6,10 +6,10 @@ to `MMMCMXCIX`: 1 to 3,999.
 ```ruby
 import roman {RomanNumeral}
 
-expect RomanNumeral.new(16).map_ok(|numeral| numeral.to_str()) == Ok("XVI")
-expect RomanNumeral.parse("xlii").map_ok(|numeral| numeral.value()) == Ok(42)
-expect RomanNumeral.new(4000) == Err(OutOfRange)
-expect RomanNumeral.parse("IIII") == Err(InvalidRomanNumeral)
+expect RomanNumeral.from_nat(16).map_ok(|numeral| numeral.to_str()) == Ok("XVI")
+expect RomanNumeral.from_str("xlii").map_ok(|numeral| numeral.to_nat()) == Ok(42)
+expect RomanNumeral.from_nat(4000) == Err(OutOfRange)
+expect RomanNumeral.from_str("IIII") == Err(Malformed)
 ```
 
 ## Using it
