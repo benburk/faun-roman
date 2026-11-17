@@ -20,4 +20,4 @@ runs:
         key: faun-${{ inputs.rev }}
     - if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
-      run: cargo install --locked --git https://github.com/faun-lang/faun-lang --rev ${{ inputs.rev }} faun
+      run: cargo install --locked --git https://github.com/faun-lang/faun --rev ${{ inputs.rev }} faun
