@@ -1,6 +1,6 @@
 # faun-roman
 
-Roman numerals for [Faun](https://github.com/benburk/faun-lang), from `I`
+Roman numerals for [Faun](https://github.com/faun-lang/faun-lang), from `I`
 to `MMMCMXCIX`: 1 to 3,999.
 
 ```ruby
@@ -14,7 +14,7 @@ expect RomanNumeral.from_str("IIII") == Err(Malformed)
 
 ## Using it
 
-Each [release](https://github.com/benburk/faun-roman/releases)'s notes give
+Each [release](https://github.com/faun-lang/faun-roman/releases)'s notes give
 the line to add to your package's `uses`.
 
 ## Releasing
