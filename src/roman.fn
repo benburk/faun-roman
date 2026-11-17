@@ -7,8 +7,6 @@
 # `xvi`, and read in either, so long as it is all one case and written the
 # one way `from_nat` would write it: `IIII` and `IC` are refused.
 
-package {}
-
 export {RomanNumeral}
 
 # Each value a numeral writes, largest first, the subtractive pairs among
