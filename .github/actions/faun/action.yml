@@ -7,7 +7,7 @@ description: Build the faun command from a pinned faun-lang commit, cached.
 inputs:
   rev:
     description: The faun-lang commit to build.
-    default: 762a2907dd8cb6a890b17de7ad6907783d51d228
+    default: 416e9103470a101ce643f960c485841b0ac8f05d
 
 runs:
   using: composite
